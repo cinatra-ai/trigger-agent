@@ -1,0 +1,354 @@
+{
+  "agentspec_version": "26.1.0",
+  "component_type": "Flow",
+  "id": "trigger-agent-flow",
+  "name": "Trigger Agent",
+  "metadata": {
+    "cinatra": {
+      "type": "flow",
+      "packageName": "@cinatra-ai/trigger-agent",
+      "packageVersion": "0.1.6",
+      "hitlScreens": [
+        "@cinatra-ai/trigger-agent:configure"
+      ]
+    }
+  },
+  "inputs": [
+    {
+      "title": "cinatra_run_id",
+      "type": "string",
+      "default": ""
+    }
+  ],
+  "outputs": [
+    {
+      "title": "triggerType",
+      "type": "string"
+    },
+    {
+      "title": "scheduledAt",
+      "type": "string"
+    },
+    {
+      "title": "cronExpression",
+      "type": "string"
+    },
+    {
+      "title": "timezone",
+      "type": "string"
+    },
+    {
+      "title": "enabled",
+      "type": "boolean"
+    }
+  ],
+  "start_node": {
+    "$component_ref": "start"
+  },
+  "nodes": [
+    {
+      "$component_ref": "start"
+    },
+    {
+      "$component_ref": "configure_gate"
+    },
+    {
+      "$component_ref": "persist"
+    },
+    {
+      "$component_ref": "end"
+    }
+  ],
+  "control_flow_connections": [
+    {
+      "component_type": "ControlFlowEdge",
+      "name": "start_to_configure_gate",
+      "from_node": {
+        "$component_ref": "start"
+      },
+      "to_node": {
+        "$component_ref": "configure_gate"
+      }
+    },
+    {
+      "component_type": "ControlFlowEdge",
+      "name": "persist_to_end",
+      "from_node": {
+        "$component_ref": "persist"
+      },
+      "to_node": {
+        "$component_ref": "end"
+      }
+    },
+    {
+      "component_type": "ControlFlowEdge",
+      "name": "configure_gate_to_persist",
+      "from_node": {
+        "$component_ref": "configure_gate"
+      },
+      "to_node": {
+        "$component_ref": "persist"
+      }
+    }
+  ],
+  "data_flow_connections": [
+    {
+      "component_type": "DataFlowEdge",
+      "name": "configure_gate_to_persist_userResponse",
+      "source_node": {
+        "$component_ref": "configure_gate"
+      },
+      "source_output": "userResponse",
+      "destination_node": {
+        "$component_ref": "persist"
+      },
+      "destination_input": "userResponse"
+    },
+    {
+      "component_type": "DataFlowEdge",
+      "name": "start_to_persist_cinatra_run_id",
+      "source_node": {
+        "$component_ref": "start"
+      },
+      "source_output": "cinatra_run_id",
+      "destination_node": {
+        "$component_ref": "persist"
+      },
+      "destination_input": "agent_run_id"
+    },
+    {
+      "component_type": "DataFlowEdge",
+      "name": "persist_to_end_triggerType",
+      "source_node": {
+        "$component_ref": "persist"
+      },
+      "source_output": "triggerType",
+      "destination_node": {
+        "$component_ref": "end"
+      },
+      "destination_input": "triggerType"
+    },
+    {
+      "component_type": "DataFlowEdge",
+      "name": "persist_to_end_scheduledAt",
+      "source_node": {
+        "$component_ref": "persist"
+      },
+      "source_output": "scheduledAt",
+      "destination_node": {
+        "$component_ref": "end"
+      },
+      "destination_input": "scheduledAt"
+    },
+    {
+      "component_type": "DataFlowEdge",
+      "name": "persist_to_end_cronExpression",
+      "source_node": {
+        "$component_ref": "persist"
+      },
+      "source_output": "cronExpression",
+      "destination_node": {
+        "$component_ref": "end"
+      },
+      "destination_input": "cronExpression"
+    },
+    {
+      "component_type": "DataFlowEdge",
+      "name": "persist_to_end_timezone",
+      "source_node": {
+        "$component_ref": "persist"
+      },
+      "source_output": "timezone",
+      "destination_node": {
+        "$component_ref": "end"
+      },
+      "destination_input": "timezone"
+    },
+    {
+      "component_type": "DataFlowEdge",
+      "name": "persist_to_end_enabled",
+      "source_node": {
+        "$component_ref": "persist"
+      },
+      "source_output": "enabled",
+      "destination_node": {
+        "$component_ref": "end"
+      },
+      "destination_input": "enabled"
+    }
+  ],
+  "$referenced_components": {
+    "start": {
+      "component_type": "StartNode",
+      "id": "start",
+      "name": "Inputs",
+      "metadata": {
+        "cinatra": {
+          "required": [],
+          "hidden": [
+            "cinatra_run_id"
+          ]
+        }
+      },
+      "inputs": [
+        {
+          "title": "cinatra_run_id",
+          "type": "string",
+          "default": ""
+        }
+      ]
+    },
+    "configure_gate": {
+      "component_type": "InputMessageNode",
+      "id": "configure_gate",
+      "name": "Configure trigger",
+      "metadata": {
+        "cinatra": {
+          "riskClass": "read_only",
+          "requiresApproval": true,
+          "renderer": "@cinatra-ai/trigger-agent:configure",
+          "a2uiSurfaceId": "trigger-agent:configure-gate:input",
+          "autoSkipWhenInputsPresent": false,
+          "inputMessageSchema": {
+            "type": "object",
+            "x-renderer": "@cinatra-ai/trigger-agent:configure",
+            "properties": {
+              "userResponse": {
+                "type": "string",
+                "title": "User response",
+                "description": "JSON-encoded form values produced by the trigger configure renderer"
+              }
+            },
+            "required": [
+              "userResponse"
+            ]
+          },
+          "formSchema": {
+            "type": "object",
+            "x-renderer": "@cinatra-ai/trigger-agent:configure",
+            "properties": {
+              "triggerType": {
+                "type": "string",
+                "title": "Trigger type",
+                "enum": [
+                  "immediate",
+                  "scheduled",
+                  "recurring"
+                ]
+              },
+              "scheduledAt": {
+                "type": "string",
+                "title": "Scheduled at",
+                "description": "ISO 8601 instant in UTC (only when triggerType is 'scheduled')"
+              },
+              "cronExpression": {
+                "type": "string",
+                "title": "Cron expression",
+                "description": "5-field cron string (only when triggerType is 'recurring')"
+              },
+              "timezone": {
+                "type": "string",
+                "title": "Timezone",
+                "description": "IANA timezone identifier"
+              }
+            },
+            "required": [
+              "triggerType",
+              "timezone"
+            ]
+          }
+        }
+      },
+      "outputs": [
+        {
+          "title": "userResponse",
+          "type": "string"
+        }
+      ]
+    },
+    "persist": {
+      "component_type": "ApiNode",
+      "id": "persist",
+      "name": "Persist trigger",
+      "url": "{{CINATRA_BASE_URL}}/api/agents/passthrough",
+      "http_method": "POST",
+      "data": {
+        "tool": "trigger_config_set",
+        "input": {
+          "runId": "{{ agent_run_id }}",
+          "userResponse": "{{ userResponse }}"
+        },
+        "agent_run_id": "{{ agent_run_id }}"
+      },
+      "inputs": [
+        {
+          "title": "userResponse",
+          "type": "string",
+          "default": ""
+        },
+        {
+          "title": "agent_run_id",
+          "type": "string",
+          "default": ""
+        }
+      ],
+      "outputs": [
+        {
+          "title": "triggerType",
+          "type": "string"
+        },
+        {
+          "title": "scheduledAt",
+          "type": "string"
+        },
+        {
+          "title": "cronExpression",
+          "type": "string"
+        },
+        {
+          "title": "timezone",
+          "type": "string"
+        },
+        {
+          "title": "enabled",
+          "type": "boolean"
+        }
+      ],
+      "metadata": {
+        "cinatra": {
+          "riskClass": "write",
+          "requiresApproval": true,
+          "approvalPolicy": "always",
+          "packageName": "@cinatra-ai/trigger-agent"
+        }
+      }
+    },
+    "end": {
+      "component_type": "EndNode",
+      "id": "end",
+      "name": "End",
+      "outputs": [
+        {
+          "title": "triggerType",
+          "type": "string"
+        },
+        {
+          "title": "scheduledAt",
+          "type": "string"
+        },
+        {
+          "title": "cronExpression",
+          "type": "string"
+        },
+        {
+          "title": "timezone",
+          "type": "string"
+        },
+        {
+          "title": "enabled",
+          "type": "boolean"
+        }
+      ]
+    }
+  }
+}
