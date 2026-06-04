@@ -1,6 +1,6 @@
 {
   "name": "@cinatra-ai/trigger-agent",
-  "version": "0.1.6",
+  "version": "0.1.0",
   "license": "Apache-2.0",
   "description": "Configures a per-run trigger — immediate, scheduled, or recurring — so the workflow runs at the right time.",
   "type": "module",
