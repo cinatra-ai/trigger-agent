@@ -4,6 +4,10 @@
   "license": "Apache-2.0",
   "description": "Configures a per-run trigger — immediate, scheduled, or recurring — so the workflow runs at the right time.",
   "type": "module",
+  "files": [
+    "cinatra",
+    "skills"
+  ],
   "cinatra": {
     "apiVersion": "cinatra.ai/v1",
     "kind": "agent",
