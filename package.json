@@ -11,6 +11,18 @@
   "cinatra": {
     "apiVersion": "cinatra.ai/v1",
     "kind": "agent",
-    "dependencies": []
+    "dependencies": [],
+    "fieldRenderers": [
+      {
+        "id": "@cinatra-ai/trigger-agent:configure",
+        "kind": "trigger-configure",
+        "priority": 60
+      },
+      {
+        "id": "@cinatra-ai/trigger-agent:confirm",
+        "kind": "trigger-confirm",
+        "priority": 60
+      }
+    ]
   }
 }
