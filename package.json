@@ -17,11 +17,6 @@
         "id": "@cinatra-ai/trigger-agent:configure",
         "kind": "trigger-configure",
         "priority": 60
-      },
-      {
-        "id": "@cinatra-ai/trigger-agent:confirm",
-        "kind": "trigger-confirm",
-        "priority": 60
       }
     ],
     "consumes": []
