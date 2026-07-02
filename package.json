@@ -23,6 +23,7 @@
         "kind": "trigger-confirm",
         "priority": 60
       }
-    ]
+    ],
+    "consumes": []
   }
 }
