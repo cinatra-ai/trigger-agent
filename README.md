@@ -1,6 +1,6 @@
 # Trigger Agent
 
-Decide when a workflow runs before it starts. Add this agent at the beginning of any Cinatra workflow and your users get a small picker — run now, run once at a specific time, or run on a recurring schedule — followed by an explicit confirmation step. Nothing is scheduled until the user confirms.
+Decide when a workflow runs before it starts. Add this agent at the beginning of any Cinatra workflow and your users get a small picker — run now, run once at a specific time, or run on a recurring schedule. Nothing is scheduled until the write step is approved.
 
 ## Works with
 
@@ -10,8 +10,8 @@ Decide when a workflow runs before it starts. Add this agent at the beginning of
 
 - Present a trigger picker (immediate, one-time scheduled, or recurring) via an interactive HITL gate
 - Capture a date, time, and IANA timezone for a scheduled run; accept a plain-language prompt or a 5-field cron expression for recurring runs
-- Show a read-only confirmation summary and require explicit user approval before writing anything
-- Persist the confirmed trigger to the parent workflow run via `trigger_config_set`; the call is idempotent (upsert) and fires exactly once per run
+- Gate the persist step on the platform's write-approval flow (`riskClass: "write"`, `approvalPolicy: "always"`) before writing anything
+- Persist the trigger to the parent workflow run via `trigger_config_set`; the flow has one persist node and the call is idempotent (upsert) on retry
 - Return `triggerType`, `scheduledAt`, `cronExpression`, `timezone`, and `enabled` as typed flow outputs for downstream nodes
 - Install: add `@cinatra-ai/trigger-agent` to your workflow extension's `cinatra.dependencies` array in `package.json`
 - Configure: no external credentials required; pass `cinatra_run_id` (injected automatically by the Cinatra dispatcher) as the only input; `timezone` defaults to `"UTC"` when omitted

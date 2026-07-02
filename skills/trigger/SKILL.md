@@ -1,47 +1,53 @@
 ---
 name: trigger-agent
-description: Configures and confirms a per-run trigger (immediate, scheduled, or recurring) before the parent agent's first stepper step. Persists the confirmed configuration via trigger_config_set.
+description: A single HITL trigger-configuration gate (immediate, scheduled, or recurring) that deterministically persists the result via trigger_config_set. No LLM step; no separate confirm gate.
 ---
 
 # Trigger Agent
 
-You are the trigger configuration agent. Your job is to capture a trigger configuration from the user via the configure HITL gate, wait for explicit confirmation via the confirm HITL gate, and then call `trigger_config_set` exactly once to persist the configuration into `agent_run_triggers` for the parent run.
+`cinatra/oas.json` compiles to a deterministic flow with no LLM node:
+`start → configure_gate → persist → end`. There is no llm-bridge node, so this
+file is never consumed as a runtime system prompt — it documents the shipped
+flow for maintainers and for anything that reads this package's skill card.
 
 ## Inputs
 
-- `cinatra_run_id` — the trigger-agent's run id, injected by the dispatcher. The persist step writes the `agent_run_triggers` row keyed by this id (wired `start.cinatra_run_id → persist.agent_run_id`).
+- `cinatra_run_id` — the trigger-agent's run id, injected by the dispatcher.
+  Wired `start.cinatra_run_id → persist.agent_run_id`; the persist step writes
+  the `agent_run_triggers` row keyed by this id.
 
-## Steps
+## Flow
 
-STEP 1 — Configure (HITL):
-The configure gate emits an INTERRUPT to the frontend with renderer `@cinatra-ai/trigger-agent:configure`. The user picks a trigger type and fills in the schedule via the existing TriggerScreenClient form (radio choices, schedule pickers, prompt-driven AI suggestions). The gate's outputs are `triggerType`, `scheduledAt`, `cronExpression`, and `timezone`.
+STEP 1 — Configure (HITL gate, renderer `@cinatra-ai/trigger-agent:configure`):
+The gate emits an INTERRUPT to the frontend. The user picks a trigger type and
+fills in the schedule via the existing `TriggerScreenClient` form (radio
+choices, schedule pickers, prompt-driven AI suggestions). The gate's single
+output, `userResponse`, is a JSON-encoded string of the form values
+(`triggerType`, `timezone`, and `scheduledAt` or `cronExpression` depending on
+`triggerType`).
 
-STEP 2 — Confirm (HITL):
-The confirm gate emits a second INTERRUPT with renderer `@cinatra-ai/trigger-agent:confirm`. The user reviews the captured configuration in a read-only summary and clicks "Confirm" to release the gate. No changes are made to `agent_run_triggers` until this gate releases.
+STEP 2 — Persist (deterministic API call, requires approval):
+`userResponse` and `agent_run_id` are forwarded as-is to
+`POST {{CINATRA_BASE_URL}}/api/agents/passthrough` with
+`tool: "trigger_config_set"` and `input: { runId: agent_run_id, userResponse }`.
+This node is `riskClass: "write"` with `approvalPolicy: "always"`, so the
+platform's write-approval gate must release before the call executes — nothing
+is written to `agent_run_triggers` before that approval. `trigger_config_set`
+parses `userResponse` server-side and upserts the row (idempotent).
 
-STEP 3 — Persist (LLM via orchestration):
-Call `trigger_config_set` exactly once with:
-
-  trigger_config_set({
-    runId: "<cinatra_run_id input>",
-    triggerType: "<triggerType from configure_gate>",
-    scheduledAt: "<scheduledAt from configure_gate or omit>",
-    cronExpression: "<cronExpression from configure_gate or omit>",
-    timezone: "<timezone from configure_gate>",
-    enabled: true
-  })
-
-- Omit `scheduledAt` when `triggerType` is `"immediate"` or `"recurring"`.
-- Omit `cronExpression` when `triggerType` is `"immediate"` or `"scheduled"`.
-- Format `scheduledAt` as ISO 8601 in UTC (e.g. `"2026-06-15T14:30:00Z"`).
-- Format `cronExpression` as a 5-field cron string (e.g. `"0 9 * * MON"`).
-- Default `timezone` to `"UTC"` if no zone was supplied.
-
-STEP 4 — Return:
-After `trigger_config_set` returns successfully, return the persisted configuration as JSON: `{"triggerType":"...","scheduledAt":"... or empty string","cronExpression":"... or empty string","timezone":"...","enabled":true}`.
+STEP 3 — Return:
+The persist node's outputs (`triggerType`, `scheduledAt`, `cronExpression`,
+`timezone`, `enabled`) are wired straight to the flow's `end` node as typed
+outputs for downstream nodes.
 
 ## Constraints
 
-- Never call `trigger_config_set` before the confirm gate releases — the user MUST explicitly approve the configuration.
-- Never write directly to `agent_run_triggers`. Always go through `trigger_config_set` so the actor-aware authorization in `setRunTriggerForActor` applies.
-- Never call `trigger_config_set` more than once per run. The handler is idempotent (upsert) but a duplicate call wastes a BullMQ scheduler slot.
+- There is exactly one HITL gate (`configure`). There is no `confirm` gate and
+  no LLM-bridge step — do not reintroduce either without also wiring the
+  matching nodes into `cinatra/oas.json`.
+- All writes go through `trigger_config_set` (server-side, actor-aware
+  authorization via `setRunTriggerForActor`); the deterministic persist node
+  never writes to `agent_run_triggers` directly.
+- The flow contains a single `persist` node, so it does not intentionally
+  schedule duplicate `trigger_config_set` calls; a retried call is still safe
+  because the handler is idempotent (upsert).
