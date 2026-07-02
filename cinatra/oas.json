@@ -7,7 +7,6 @@
     "cinatra": {
       "type": "flow",
       "packageName": "@cinatra-ai/trigger-agent",
-      "packageVersion": "0.1.1",
       "hitlScreens": [
         "@cinatra-ai/trigger-agent:configure"
       ]
